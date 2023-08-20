@@ -27,6 +27,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        android:visibility="gone"
         />
 
     <TextView
@@ -38,7 +39,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:textSize="32sp"
-        tools:text="error text"/>
+        tools:text="error text"
+        android:visibility="gone"/>
 
     <ProgressBar
         android:id="@+id/pagination_progress_bar"
@@ -47,6 +49,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        android:visibility="gone"
         />
 
 

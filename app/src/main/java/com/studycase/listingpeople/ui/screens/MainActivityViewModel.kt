@@ -4,10 +4,10 @@ import DataSource
 import FetchCompletionHandler
 import FetchError
 import FetchResponse
-import Person
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.studycase.listingpeople.util.Constants
+import com.studycase.listingpeople.util.Constants.RESPONSE
 import com.studycase.listingpeople.util.Resource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,11 +24,11 @@ class MainActivityViewModel(
     private val _pageState = MutableStateFlow<Resource<Any>?>(null)
     var pageState = _pageState.asStateFlow()
 
-    private val _paginationProgressState = MutableStateFlow<Boolean>(false)
+    private val _paginationProgressState = MutableStateFlow<Boolean?>(null)
     var paginationProgressState = _paginationProgressState.asStateFlow()
 
-    private val _currentIndex = MutableStateFlow<Int>(0)
-    var currentIndex = _currentIndex.asStateFlow()
+    private val _isSwiping = MutableStateFlow<Boolean?>(null)
+    var isSwiping = _isSwiping.asStateFlow()
 
 
     var theJob :Job? = null
@@ -39,8 +39,8 @@ class MainActivityViewModel(
         fetchPeople()
     }
 
-    fun fetchPeople(next : String? = null, isPaginating :Boolean = false){
-        Log.d("burdayım", "fetchPeople called")
+    fun fetchPeople(next : String? = null, isPaginating :Boolean = false, isSwiping: Boolean = false){
+        Log.d(RESPONSE, "fetchPeople called")
         theJob?.cancel()
         theJob = CoroutineScope(Dispatchers.IO).launch {
 
@@ -51,11 +51,13 @@ class MainActivityViewModel(
 
             dataSource.fetch(next = next, object : FetchCompletionHandler {
                 override fun invoke(response: FetchResponse?, error: FetchError?) {
-                    _paginationProgressState.update { false }
-                    //Log.d("burdayım", "response: $response - error: $error ")
+                    if (isPaginating)
+                        _paginationProgressState.update { false }
+
                     if (response != null) {
                         currentPage = response.next
-                        updateState(response)
+                        _pageState.update { Resource.Success(response) }
+                        _isSwiping.update { isSwiping }
                     }
                     else
                         retryRequest(error)
@@ -64,15 +66,6 @@ class MainActivityViewModel(
         }
     }
 
-    fun updateState(response: FetchResponse) {
-        val currentState = _pageState.value?.data ?: FetchResponse(listOf(), null)
-        val oldList = (currentState as FetchResponse).people
-        val newList = oldList + response.people
-        val newState = FetchResponse(newList, response.next)
-        Log.d("burdayım", "old:${oldList.count()} new: ${newList.count()} newState:${newState.people.count()}")
-        _currentIndex.update { oldList.count() }
-        _pageState.update { Resource.Success(newState) }
-    }
 
     fun retryRequest(error: FetchError?) {
         if(currentRetry < Constants.RETRY_LIMIT) {
@@ -87,7 +80,6 @@ class MainActivityViewModel(
     override fun onCleared() {
         super.onCleared()
         theJob?.cancel()
-        theJob = null
     }
 
 }
