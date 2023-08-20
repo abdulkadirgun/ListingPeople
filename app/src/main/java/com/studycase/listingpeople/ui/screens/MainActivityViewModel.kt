@@ -8,10 +8,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.studycase.listingpeople.util.Constants
 import com.studycase.listingpeople.util.Constants.RESPONSE
+import com.studycase.listingpeople.util.Constants.RETRY_DELAY
 import com.studycase.listingpeople.util.Resource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -31,7 +33,8 @@ class MainActivityViewModel(
     var isSwiping = _isSwiping.asStateFlow()
 
 
-    var theJob :Job? = null
+    var requestJob :Job? = null
+    var retryJob :Job? = null
     private var currentRetry = 0
     private var currentPage :String? = null
 
@@ -41,8 +44,8 @@ class MainActivityViewModel(
 
     fun fetchPeople(next : String? = null, isPaginating :Boolean = false, isSwiping: Boolean = false){
         Log.d(RESPONSE, "fetchPeople called")
-        theJob?.cancel()
-        theJob = CoroutineScope(Dispatchers.IO).launch {
+        requestJob?.cancel()
+        requestJob = CoroutineScope(Dispatchers.IO).launch {
 
             if (isPaginating)
                 _paginationProgressState.update { true }
@@ -68,18 +71,25 @@ class MainActivityViewModel(
 
 
     fun retryRequest(error: FetchError?) {
-        if(currentRetry < Constants.RETRY_LIMIT) {
-            currentRetry++
-            fetchPeople(currentPage)
+        /**
+         * retry logic (time-frequency)
+         * */
+        retryJob = CoroutineScope(Dispatchers.IO).launch {
+            delay(RETRY_DELAY)
+            if(currentRetry < Constants.RETRY_LIMIT) {
+                currentRetry++
+                fetchPeople(currentPage)
+            }
+            else
+                _pageState.update {  Resource.Error(error?.errorDescription) }
         }
-        else
-            _pageState.update {  Resource.Error(error?.errorDescription) }
     }
 
 
     override fun onCleared() {
         super.onCleared()
-        theJob?.cancel()
+        requestJob?.cancel()
+        retryJob?.cancel()
     }
 
 }

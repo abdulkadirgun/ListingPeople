@@ -27,15 +27,15 @@ class DataSource {
         val lowWaitTimeRange: ClosedRange<Double> = 0.0..0.3 // lower bound must be >= 0.0, upper bound must be > lower bound
         val highWaitTimeRange: ClosedRange<Double> = 1.0..2.0 // lower bound must be >= 0.0, upper bound must be > lower bound
         const val errorProbability = 0.05 // must be > 0.0
-        const val backendBugTriggerProbability = 0.99 // must be > 0.0
-        const val emptyFirstResultsProbability = 0.05 // must be > 0.0
+        const val backendBugTriggerProbability = 0.05 // must be > 0.0
+        const val emptyFirstResultsProbability = 0.1 // must be > 0.0
     }
 
     init {
         initializeData()
     }
 
-    fun fetch(next: String?, completionHandler: FetchCompletionHandler) {
+    public fun fetch(next: String?, completionHandler: FetchCompletionHandler) {
         val processResult = processRequest(next)
 
         Handler(Looper.getMainLooper()).postDelayed({
@@ -50,7 +50,7 @@ class DataSource {
         val newPeople: ArrayList<Person> = arrayListOf()
         val peopleCount: Int = RandomUtils.generateRandomInt(range = Constants.peopleCountRange)
         for (index in 0 until peopleCount) {
-            val person = Person(id = (index + 1), fullName = PeopleGen.generateRandomFullName())
+            val person = Person(id = index + 1, fullName = PeopleGen.generateRandomFullName())
             newPeople.add(person)
         }
         people = newPeople.shuffled()
